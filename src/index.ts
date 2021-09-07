@@ -1,43 +1,59 @@
 import "reflect-metadata";
-import { MikroORM } from "@mikro-orm/core";
-import { __prod__ } from "./constants";
-import microConfig from './mikro-orm.config';
+import { COOKIE_NAME, __prod__ } from "./constants";
 import express from 'express';
 import {ApolloServer} from 'apollo-server-express';
 import {buildSchema} from "type-graphql";
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
-import redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import { MyContext } from "./types";
 import expressPlayground from 'graphql-playground-middleware-express';
+import cors from 'cors';
+import { EnumGraphQL } from "./utils/EnumGraphQL";
+import Redis from "ioredis";
+import {createConnection} from "typeorm";
+import { Post } from "./entities/Post";
+import { User } from "./entities/User";
+import path from "path";
 
 const main = async () => {
-
-    
-    const orm = await MikroORM.init(microConfig);
-    await orm.getMigrator().up();
+    await createConnection({
+        type: "postgres",
+        database: "lireddit2",
+        username: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        logging: true,
+        synchronize: true,
+        entities: [Post, User],
+        migrations: [path.join(__dirname, "/migrations/*")]
+    });
     const app = express();
+    
+    EnumGraphQL();
+    const RedisStore = connectRedis(session);
+    const redis = new Redis();
 
     const apolloServer = new ApolloServer({
         schema: await buildSchema({
             resolvers: [HelloResolver, PostResolver, UserResolver],
             validate: false
         }),
-        context: ({req, res}) : MyContext => ({req, res ,em : orm.em})
+        context: ({req, res}) : MyContext => ({req, res, redis})
         
     });
 
-    const RedisStore = connectRedis(session);
-    const redisClient = redis.createClient();
+    app.use(cors({
+        origin: "http://localhost:3000",
+        credentials: true
+    }));
 
     app.use(
         session({
-                name: "qid",
+                name: COOKIE_NAME,
                 store: new RedisStore({
-                    client: redisClient,
+                    client: redis,
                     disableTouch: true,
                 }),
                 secret: 'keyboard cat', 
@@ -54,7 +70,7 @@ const main = async () => {
     
     await apolloServer.start();
 
-    apolloServer.applyMiddleware({app});
+    apolloServer.applyMiddleware({app, cors : false});
     app.get('/playground', expressPlayground({ endpoint: '/graphql' }))
 
     app.listen(4000, () => {

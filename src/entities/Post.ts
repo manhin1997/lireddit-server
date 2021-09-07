@@ -1,24 +1,39 @@
-import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
-import { Field, ObjectType } from "type-graphql";
+import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BaseEntity, ManyToOne} from "typeorm";
+import { Field, Int, ObjectType } from "type-graphql";
+import { User } from "./User";
 
 @ObjectType()
 @Entity()
-export class Post {
+export class Post extends BaseEntity{
 
-  @Field()
-  @PrimaryKey()
+  @Field(() => Int)
+  @PrimaryGeneratedColumn()
   _id!: number;
 
-  @Field(() => String)
-  @Property({type: 'date'})
-  createdAt = new Date();
+  @Field()
+  @Column()
+  creatorId : number;
 
   @Field(() => String)
-  @Property({ onUpdate: () => new Date(), type: 'date'})
-  updatedAt = new Date();
+  @CreateDateColumn()
+  createdAt : Date;
+
+  @Field(() => String)
+  @UpdateDateColumn()
+  updatedAt : Date;
 
   @Field()
-  @Property({type: 'text'})
+  @Column()
   title!: string;
 
+  @Field()
+  @Column()
+  text!: string;
+
+  @Field()
+  @Column({type : "int", default : 0})
+  points!: number;
+
+  @ManyToOne(() => User, user => user.posts)
+  creator: User;
 }
