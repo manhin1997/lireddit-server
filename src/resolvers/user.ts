@@ -1,6 +1,6 @@
 import { User } from "../entities/User";
 import { MyContext } from "../types";
-import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, FieldResolver, Mutation, Query, Resolver, Root } from "type-graphql";
 import argon2 from "argon2";
 import { COOKIE_NAME, FORGET_PW_PREFIX } from "../constants";
 import { UserNameType } from "../enums";
@@ -10,8 +10,20 @@ import { validateRegister } from "../utils/validateRegister";
 import { sendEmail } from "../utils/sendEmail";
 import { v4 as uuidv4 } from 'uuid';
 
-@Resolver()
+@Resolver(User)
 export class UserResolver {
+    @FieldResolver(() => String)
+    email(
+        @Root() user: User, 
+        @Ctx() {req} : MyContext
+    ){
+        if(req.session.userId === user._id){
+            return user.email;
+        }
+        return "";
+
+    }
+
     @Query(() => User, {nullable: true})
     me(
         @Ctx() {req} : MyContext

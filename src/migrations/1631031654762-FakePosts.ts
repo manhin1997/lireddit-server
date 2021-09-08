@@ -1,6 +1,6 @@
 import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class FakePosts1631027309228 implements MigrationInterface {
+export class FakePosts1631031654762 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`insert into post (title, text, "creatorId") values ('Slingshot Hip Hop', 'In quis justo. Maecenas rhoncus aliquam lacus. Morbi quis tortor id nulla ultrices aliquet.
@@ -614,11 +614,10 @@ export class FakePosts1631027309228 implements MigrationInterface {
         insert into post (title, text, "creatorId") values ('I Knew It Was You: Rediscovering John Cazale', 'Suspendisse potenti. In eleifend quam a odio. In hac habitasse platea dictumst.', 1);
         insert into post (title, text, "creatorId") values ('Beverly Hills Chihuahua 2', 'Aenean lectus. Pellentesque eget nunc. Donec quis orci eget orci vehicula condimentum.
         
-        Curabitur in libero ut massa volutpat convallis. Morbi odio odio, elementum eu, interdum eu, tincidunt in, leo. Maecenas pulvinar lobortis est.', 1);`)
+        Curabitur in libero ut massa volutpat convallis. Morbi odio odio, elementum eu, interdum eu, tincidunt in, leo. Maecenas pulvinar lobortis est.', 1);`);
     }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DELETE from post`);
+    public async down(_: QueryRunner): Promise<void> {
     }
 
 }

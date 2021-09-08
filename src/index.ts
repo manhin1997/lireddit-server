@@ -17,19 +17,23 @@ import {createConnection} from "typeorm";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 import path from "path";
+import { Updoot } from "./entities/Updoot";
 
 const main = async () => {
-    await createConnection({
+    const conn = await createConnection({
         type: "postgres",
         database: "lireddit2",
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         logging: true,
         synchronize: true,
-        entities: [Post, User],
+        entities: [Post, User, Updoot],
         migrations: [path.join(__dirname, "/migrations/*")]
     });
+    await conn.runMigrations();
     const app = express();
+
+    // await Post.delete({});
     
     EnumGraphQL();
     const RedisStore = connectRedis(session);
