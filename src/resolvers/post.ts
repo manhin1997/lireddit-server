@@ -129,25 +129,42 @@ export class PostResolver {
         const isUpdoot = value !== -1;
         const realValue = isUpdoot ? 1 : -1;
         const {userId} = req.session;
-        // await Updoot.insert({
-        //     userId,
-        //     postId,
-        //     value: realValue
-        // });
-        await getConnection().query(`
-            START TRANSACTION;
-
-            insert into updoot ("userId", "postId", value)
-            values (${userId},${postId},${realValue});
-
-            UPDATE post
-            SET points = points + ${realValue}
-            WHERE post._id = ${postId};
-
-            COMMIT;
-        `)
-
-        return true
+        const updoot = await Updoot.findOne({where: {postId, userId}});
+        ///User that voted before && changing their value
+        if(updoot && updoot.value !== realValue){
+            await getConnection().transaction(
+                async tm => {
+                    await tm.query(`
+                        UPDATE updoot
+                        SET value = $1
+                        WHERE "postId" = $2 AND "userId" = $3
+                    `, [realValue, postId, userId]);
+                    await tm.query(`
+                        UPDATE post
+                        SET points = points + $1
+                        WHERE post._id = $2;`,
+                    [realValue * 2, postId]);
+                }
+            );
+        } else if(!updoot){
+            await getConnection().transaction(
+                async tm => {
+                    await tm.query(`
+                        insert into updoot ("userId", "postId", value)
+                        values ($1,$2,$3);
+                    `, [userId, postId, realValue]);
+                    await tm.query(`
+                        UPDATE post
+                        SET points = points + $1
+                        WHERE post._id = $2;`,
+                    [realValue, postId]);
+                }
+            );
+        }
+        else{
+            return false;
+        }
+        return true;
     }
 
 
